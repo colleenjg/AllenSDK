@@ -80,6 +80,8 @@ def get_images_dict(pkl):
             meta = dict(
                 image_category=cat.decode("utf-8"),
                 image_name=img_name.decode("utf-8"),
+                phase=np.NaN,
+                correct_frequency=np.Nan,
                 image_index=ii,
             )
 
@@ -104,17 +106,45 @@ def get_stimulus_templates(pkl):
 
 
 def get_stimulus_metadata(pkl):
-    images = get_images_dict(pkl)
-    stimulus_index_df = pd.DataFrame(images['image_attributes'])
-    image_set_filename = convert_filepath_caseinsensitive(images['metadata']['image_set'])
-    stimulus_index_df['image_set'] = IMAGE_SETS_REV[image_set_filename]
+    stimuli = pkl['items']['behavior']['stimuli']
+    if 'images' in stimuli:
+        images = get_images_dict(pkl)
+        stimulus_index_df = pd.DataFrame(images['image_attributes'])
+        image_set_filename = convert_filepath_caseinsensitive(images['metadata']['image_set'])
+        stimulus_index_df['image_set'] = IMAGE_SETS_REV[image_set_filename]
+    else:
+        stimulus_index_df = pd.DataFrame(columns=[
+            'image_name', 'image_category', 'image_set', 'phase',
+            'correct_frequency', 'image_index'])
+
+    # if grating are in the pkl add an entry for each grating possible
+    if 'grating' in stimuli:
+        phase = stimuli['grating']['phase']
+        correct_freq = stimuli['grating']['correct_freq']
+        start_idx = len(stimulus_index_df)
+        grating_df = {'image_category': ['grating']*4,
+                      'image_name': ['gratings_0.0', 'gratings_90.0',
+                                     'gratings_180.0', 'gratings_270.0'],
+                      'image_set': ['grating']*4,
+                      'phase': [phase]*4,
+                      'correct_frequency': [correct_freq]*4,
+                      'image_index': [start_idx, start_idx+1, start_idx+2,
+                                       start_idx+3]}
+        grating_df = pd.DataFrame.from_dict(grating_df)
+
+        stimulus_index_df = stimulus_index_df.append(grating_df,
+                                                     ignore_index=True,
+                                                     sort=False)
 
     # Add an entry for omitted stimuli
     omitted_df = pd.DataFrame({'image_category': ['omitted'],
                                'image_name': ['omitted'],
                                'image_set': ['omitted'],
-                               'image_index': [stimulus_index_df['image_index'].max() + 1]})
-    stimulus_index_df = stimulus_index_df.append(omitted_df, ignore_index=True, sort=False)
+                               'phase': np.NaN,
+                               'correct_frequency': np.NaN,
+                               'image_index': len(stimulus_index_df)})
+    stimulus_index_df = stimulus_index_df.append(omitted_df, ignore_index=True,
+                                                 sort=False)
     stimulus_index_df.set_index(['image_index'], inplace=True, drop=True)
     return stimulus_index_df
 
