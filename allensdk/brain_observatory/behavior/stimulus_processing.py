@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pickle
-import json
 from typing import Dict, List, Tuple, Union
 
 from allensdk.brain_observatory.behavior import IMAGE_SETS
@@ -63,7 +62,26 @@ def get_stimulus_presentations(data, stimulus_timestamps) -> pd.DataFrame:
     return stimulus_table
 
 
-def get_images_dict(pkl):
+def get_images_dict(pkl) -> Dict:
+    """
+    Gets the dictionary of images that were presented during an experiment
+    along with image set metadata and the image specific metadata. This
+    function uses the path to the image pkl file to read the images and their
+    metadata from the pkl file and return this dictionary.
+    Parameters
+    ----------
+    pkl: The pkl file containing the data for the stimuli presented during
+         experiment
+
+    Returns
+    -------
+    Dict:
+        A dictionary containing keys images, metadata, and image_attributes.
+        These correspond to paths to images to images presented, metadata
+        on the whole set of images, and metadata on specific images,
+        respectively.
+
+    """
     # Sometimes the source is a zipped pickle:
     metadata = {'image_set': pkl["items"]["behavior"]["stimuli"]["images"]["image_path"]}
 
@@ -99,13 +117,43 @@ def get_images_dict(pkl):
     return images_dict
 
 
-def get_stimulus_templates(pkl):
+def get_stimulus_templates(pkl) -> Dict:
+    """
+    Gets dictionary of images presented during experimentation
+    Parameters
+    ----------
+    pkl: pkl file containing the data for the presented stimuli
+
+    Returns
+    -------
+    Dict:
+        Dictionary of images that were presented during the experiment
+
+    """
     images = get_images_dict(pkl)
     image_set_filename = convert_filepath_caseinsensitive(images['metadata']['image_set'])
     return {IMAGE_SETS_REV[image_set_filename]: np.array(images['images'])}
 
 
-def get_stimulus_metadata(pkl):
+def get_stimulus_metadata(pkl) -> pd.DataFrame:
+    """
+    Gets the stimulus metadata for each type of stimulus presented during
+    the experiment. The metadata is return for gratings, images, and omitted
+    stimuli.
+    Parameters
+    ----------
+    pkl: the pkl file containing the information about what stimuli were
+         presented during the experiment
+
+    Returns
+    -------
+    pd.DataFrame:
+        The dataframe containing a row for every stimulus that was presented
+        during the experiment. The row contains the following data,
+        image_category, image_name, image_set, phase, correct_frequency,
+        and image index.
+
+    """
     stimuli = pkl['items']['behavior']['stimuli']
     if 'images' in stimuli:
         images = get_images_dict(pkl)
