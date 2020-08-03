@@ -99,7 +99,7 @@ def get_images_dict(pkl) -> Dict:
                 image_category=cat.decode("utf-8"),
                 image_name=img_name.decode("utf-8"),
                 phase=np.NaN,
-                correct_frequency=np.Nan,
+                correct_frequency=np.NaN,
                 image_index=ii,
             )
 
